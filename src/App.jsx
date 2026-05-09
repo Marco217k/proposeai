@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 
 const STEPS = ["Projet", "Client", "Offre", "Résultat"];
-const STRIPE_KEY = "pk_test_51TToAsQzKXermWLH7XenK6D12Ts007QCiX9ti4NlRv5JZ8aoqkCytbDbrc1B2WM7vyGEgETBRnUClQCn0xWZ4fs300Thax2jHa";
+const STRIPE_KEY = "pk_live_51TToAfQqfXKCwkrJD6gXX4Dt3HZo45NXP266tNr6RGi65Km0kOsdAhApcMFTlhhv1uZZ0YA7drxHPDQV1vduRUPY00pR01Xcca";
 
 const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');`;
 
@@ -441,8 +441,8 @@ Maximum 400 mots.`;
 
   const handlePayment = async () => {
     const priceId = selectedPlan === "starter" 
-      ? "price_1TVIibQzKXermWLHidUPgL3D" 
-      : "price_1TVIgGQzKXermWLHJRK7bjxv";
+      ? "price_1TVIrgQqfXKCwkrJpYNKBDaa" 
+      : "price_1TVIrQQqfXKCwkrJRujtcyMR";
     const stripe = window.Stripe(STRIPE_KEY);
     const { error } = await stripe.redirectToCheckout({
       lineItems: [{ price: priceId, quantity: 1 }],
