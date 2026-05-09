@@ -440,11 +440,12 @@ Maximum 400 mots.`;
   };
 
   const handlePayment = async () => {
-    const price = selectedPlan === "starter" ? 1900 : 4900;
-    const label = selectedPlan === "starter" ? "ProposeAI Starter" : "ProposeAI Pro";
+    const priceId = selectedPlan === "starter" 
+      ? "price_1TVIibQzKXermWLHidUPgL3D" 
+      : "price_1TVIgGQzKXermWLHJRK7bjxv";
     const stripe = window.Stripe(STRIPE_KEY);
     const { error } = await stripe.redirectToCheckout({
-      lineItems: [{ price_data: { currency: "eur", product_data: { name: label }, unit_amount: price, recurring: { interval: "month" } }, quantity: 1 }],
+      lineItems: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       successUrl: window.location.origin + "?success=1",
       cancelUrl: window.location.origin,
