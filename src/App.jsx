@@ -1,100 +1,323 @@
 import { useState, useRef } from "react";
 
 const STEPS = ["Projet", "Client", "Offre", "Résultat"];
-
 const STRIPE_KEY = "pk_test_51TToAsQzKXermWLH7XenK6D12Ts007QCiX9ti4NlRv5JZ8aoqkCytbDbrc1B2WM7vyGEgETBRnUClQCn0xWZ4fs300Thax2jHa";
 
-const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap');
-`;
+const FONTS = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');`;
 
 const CSS = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --border: #1e1e2e;
-    --accent: #c8f060;
-    --accent2: #60d0f0;
-    --text: #e8e8f0;
-    --muted2: #606078;
-    --radius: 12px;
+    --bg: #0d0d14;
+    --surface: #16161f;
+    --border: #252535;
+    --accent: #a8e060;
+    --accent-dark: #7ab840;
+    --text: #f0f0f8;
+    --muted: #8888a8;
+    --radius: 10px;
   }
-  body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
   .app { min-height: 100vh; display: flex; flex-direction: column; }
-  .header { padding: 20px 40px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; background: rgba(10,10,15,0.92); backdrop-filter: blur(16px); z-index: 100; }
-  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.3rem; letter-spacing: -0.03em; display: flex; align-items: center; gap: 8px; }
-  .logo-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; box-shadow: 0 0 12px var(--accent); }
-  .badge { font-size: 0.65rem; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted2); letter-spacing: 0.1em; text-transform: uppercase; }
-  .steps-bar { display: flex; padding: 0 40px; border-bottom: 1px solid var(--border); overflow-x: auto; }
-  .step-tab { padding: 14px 24px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; white-space: nowrap; display: flex; align-items: center; gap: 8px; }
+
+  /* HEADER */
+  .header {
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,20,0.95);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo {
+    font-weight: 800;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.02em;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .badge {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+  }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+
+  /* STEPS BAR */
+  .steps-bar {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .steps-bar::-webkit-scrollbar { display: none; }
+  .step-tab {
+    padding: 12px 18px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: color 0.2s;
+    letter-spacing: 0;
+  }
   .step-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .step-tab.done { color: var(--accent2); }
-  .step-num { width: 18px; height: 18px; border-radius: 50%; border: 1px solid currentColor; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; }
-  .main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; max-width: 1200px; margin: 0 auto; width: 100%; }
-  @media (max-width: 768px) { .main { grid-template-columns: 1fr; } .header { padding: 16px 20px; } .steps-bar { padding: 0 20px; } .preview-panel { display: none; } }
-  .form-panel { padding: 40px; border-right: 1px solid var(--border); }
-  .panel-title { font-family: 'Syne', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
-  .panel-sub { font-size: 0.75rem; color: var(--muted2); margin-bottom: 32px; line-height: 1.6; }
-  .field { margin-bottom: 20px; }
-  .field label { display: block; font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted2); margin-bottom: 8px; }
-  .field input, .field textarea { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.85rem; transition: border-color 0.2s; resize: vertical; outline: none; }
+  .step-tab.done { color: #60c8a0; }
+  .step-num {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+
+  /* MAIN LAYOUT */
+  .main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* FORM PANEL */
+  .form-panel { padding: 32px 28px; border-right: 1px solid var(--border); }
+  .panel-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; letter-spacing: -0.02em; }
+  .panel-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+
+  /* FIELDS */
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.88rem;
+    transition: border-color 0.2s;
+    resize: vertical;
+    outline: none;
+  }
   .field input:focus, .field textarea:focus { border-color: var(--accent); }
-  .field textarea { min-height: 90px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
-  .tag { padding: 5px 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 0.72rem; cursor: pointer; transition: all 0.15s; color: var(--muted2); }
-  .tag.selected { border-color: var(--accent); color: var(--accent); background: rgba(200,240,96,0.07); }
-  .btn-row { display: flex; gap: 12px; margin-top: 32px; }
-  .btn { padding: 12px 24px; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-size: 0.8rem; cursor: pointer; border: none; transition: all 0.18s; letter-spacing: 0.05em; }
-  .btn-primary { background: var(--accent); color: #0a0a0f; font-weight: 600; flex: 1; }
-  .btn-primary:hover { background: #d8ff70; transform: translateY(-1px); }
+  .field textarea { min-height: 85px; }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* TAGS */
+  .tag-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 7px; }
+  .tag {
+    padding: 5px 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--muted);
+  }
+  .tag.selected { border-color: var(--accent); color: var(--accent); background: rgba(168,224,96,0.08); }
+
+  /* BUTTONS */
+  .btn-row { display: flex; gap: 10px; margin-top: 28px; }
+  .btn {
+    padding: 12px 20px;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.18s;
+  }
+  .btn-primary { background: var(--accent); color: #0d0d14; flex: 1; }
+  .btn-primary:hover { background: #b8f070; transform: translateY(-1px); }
   .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-  .btn-ghost { background: transparent; color: var(--muted2); border: 1px solid var(--border); }
-  .btn-ghost:hover { border-color: var(--muted2); color: var(--text); }
-  .preview-panel { padding: 40px; position: sticky; top: 57px; height: calc(100vh - 57px); overflow-y: auto; display: flex; flex-direction: column; }
-  .preview-label { font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted2); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1.5px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
+  .btn-sm { padding: 8px 16px; font-size: 0.78rem; }
+
+  /* PREVIEW PANEL */
+  .preview-panel {
+    padding: 28px;
+    position: sticky;
+    top: 53px;
+    height: calc(100vh - 53px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .preview-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-  .proposal-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 32px; flex: 1; position: relative; overflow: hidden; min-height: 400px; }
-  .proposal-card::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(200,240,96,0.08) 0%, transparent 70%); pointer-events: none; }
-  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--muted2); text-align: center; gap: 12px; padding: 40px; }
-  .empty-icon { font-size: 2.5rem; opacity: 0.3; }
-  .empty-state p { font-size: 0.75rem; line-height: 1.7; max-width: 220px; }
-  .proposal-content { font-size: 0.82rem; line-height: 1.8; color: var(--text); white-space: pre-wrap; }
-  .proposal-header { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-  .proposal-title { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
-  .proposal-meta { font-size: 0.68rem; color: var(--muted2); margin-top: 4px; }
-  .proposal-badge { padding: 4px 10px; border-radius: 999px; background: rgba(200,240,96,0.12); border: 1px solid rgba(200,240,96,0.3); color: var(--accent); font-size: 0.65rem; letter-spacing: 0.08em; white-space: nowrap; }
-  .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 16px; }
-  .spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 0.75rem; color: var(--muted2); animation: pulse 1.5s ease-in-out infinite; }
-  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+  .proposal-card {
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    flex: 1;
+    min-height: 360px;
+    position: relative;
+  }
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; color: var(--muted); text-align: center; gap: 10px; padding: 32px;
+  }
+  .empty-icon { font-size: 2rem; opacity: 0.25; }
+  .empty-state p { font-size: 0.8rem; line-height: 1.6; max-width: 200px; }
+
+  /* PROPOSAL CONTENT */
+  .proposal-header {
+    margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .proposal-title { font-size: 1rem; font-weight: 700; }
+  .proposal-meta { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+  .proposal-badge {
+    padding: 3px 9px; border-radius: 999px;
+    background: rgba(168,224,96,0.12); border: 1px solid rgba(168,224,96,0.3);
+    color: var(--accent); font-size: 0.68rem; white-space: nowrap; font-weight: 500;
+  }
+  .proposal-content { font-size: 0.83rem; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
   .streaming::after { content: '▋'; animation: blink 0.7s step-end infinite; color: var(--accent); }
   @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-  .copy-btn { margin-top: 20px; width: 100%; padding: 11px; border-radius: var(--radius); border: 1px solid var(--border); background: transparent; color: var(--muted2); font-family: 'DM Mono', monospace; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; letter-spacing: 0.06em; }
-  .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-  .footer-note { padding: 12px 40px; border-top: 1px solid var(--border); font-size: 0.65rem; color: var(--muted2); display: flex; align-items: center; justify-content: space-between; letter-spacing: 0.05em; }
 
-  /* PRICING */
-  .pricing-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .pricing-box { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 40px; max-width: 560px; width: 100%; }
-  .pricing-title { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.03em; }
-  .pricing-sub { font-size: 0.78rem; color: var(--muted2); margin-bottom: 32px; line-height: 1.6; }
-  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .plan { border: 1px solid var(--border); border-radius: 14px; padding: 24px; cursor: pointer; transition: all 0.2s; position: relative; }
+  /* LOADING */
+  .loading-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 14px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 0.78rem; color: var(--muted); animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
+
+  .copy-btn {
+    margin-top: 16px; width: 100%; padding: 10px;
+    border-radius: var(--radius); border: 1.5px solid var(--border);
+    background: transparent; color: var(--muted); font-family: inherit;
+    font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+  }
+  .copy-btn:hover { border-color: #60c8a0; color: #60c8a0; }
+
+  /* FOOTER */
+  .footer-note {
+    padding: 12px 24px; border-top: 1px solid var(--border);
+    font-size: 0.68rem; color: var(--muted);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* SUCCESS BOX */
+  .success-box {
+    background: rgba(168,224,96,0.07);
+    border: 1px solid rgba(168,224,96,0.2);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;
+  }
+  .success-box-label { font-size: 0.7rem; font-weight: 700; color: var(--accent); letter-spacing: 0.08em; margin-bottom: 8px; }
+  .success-box-text { font-size: 0.8rem; line-height: 1.7; color: var(--text); opacity: 0.85; }
+
+  /* PRICING OVERLAY */
+  .pricing-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(8px); z-index: 200;
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+  }
+  .pricing-box {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 18px; padding: 32px; max-width: 520px; width: 100%;
+  }
+  .pricing-title { font-size: 1.4rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.02em; }
+  .pricing-sub { font-size: 0.82rem; color: var(--muted); margin-bottom: 28px; line-height: 1.6; }
+  .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .plan {
+    border: 1.5px solid var(--border); border-radius: 12px; padding: 20px;
+    cursor: pointer; transition: all 0.2s; position: relative;
+  }
   .plan:hover { border-color: var(--accent); }
-  .plan.selected { border-color: var(--accent); background: rgba(200,240,96,0.05); }
-  .plan-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
-  .plan-price { font-size: 1.6rem; font-weight: 800; color: var(--accent); margin-bottom: 12px; }
-  .plan-price span { font-size: 0.75rem; color: var(--muted2); font-weight: 400; }
-  .plan-features { font-size: 0.72rem; color: var(--muted2); line-height: 1.8; }
-  .plan-badge { position: absolute; top: -10px; right: 16px; background: var(--accent); color: #0a0a0f; font-size: 0.6rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; letter-spacing: 0.08em; }
-  .pay-btn { width: 100%; padding: 16px; background: var(--accent); color: #0a0a0f; border: none; border-radius: var(--radius); font-family: 'DM Mono', monospace; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; letter-spacing: 0.05em; }
-  .pay-btn:hover { background: #d8ff70; transform: translateY(-1px); }
-  .pricing-close { display: block; text-align: center; margin-top: 16px; font-size: 0.72rem; color: var(--muted2); cursor: pointer; }
+  .plan.selected { border-color: var(--accent); background: rgba(168,224,96,0.05); }
+  .plan-name { font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; }
+  .plan-price { font-size: 1.5rem; font-weight: 800; color: var(--accent); margin: 10px 0; }
+  .plan-price span { font-size: 0.75rem; color: var(--muted); font-weight: 400; }
+  .plan-features { font-size: 0.75rem; color: var(--muted); line-height: 1.8; }
+  .plan-badge {
+    position: absolute; top: -10px; right: 14px;
+    background: var(--accent); color: #0d0d14;
+    font-size: 0.6rem; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  }
+  .pay-btn {
+    width: 100%; padding: 14px; background: var(--accent); color: #0d0d14;
+    border: none; border-radius: var(--radius); font-family: inherit;
+    font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+  }
+  .pay-btn:hover { background: #b8f070; transform: translateY(-1px); }
+  .pricing-close {
+    display: block; text-align: center; margin-top: 14px;
+    font-size: 0.75rem; color: var(--muted); cursor: pointer;
+  }
   .pricing-close:hover { color: var(--text); }
-  .free-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(96,208,240,0.1); border: 1px solid rgba(96,208,240,0.3); color: var(--accent2); font-size: 0.65rem; margin-left: 8px; }
+  .free-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    background: rgba(96,200,160,0.1); border: 1px solid rgba(96,200,160,0.3);
+    color: #60c8a0; font-size: 0.68rem; margin-left: 8px; font-weight: 500;
+  }
+
+  /* MOBILE */
+  @media (max-width: 700px) {
+    .main { grid-template-columns: 1fr; }
+    .form-panel { padding: 24px 16px; border-right: none; }
+    .preview-panel { display: none; }
+    .header { padding: 14px 16px; }
+    .badge { display: none; }
+    .steps-bar { padding: 0 4px; }
+    .step-tab { padding: 11px 14px; font-size: 0.72rem; }
+    .row { grid-template-columns: 1fr; gap: 0; }
+    .plans { grid-template-columns: 1fr; }
+    .pricing-box { padding: 24px 18px; }
+    .footer-note { padding: 10px 16px; flex-direction: column; gap: 4px; text-align: center; }
+  }
 `;
 
 const TONES = ["Professionnel", "Chaleureux", "Direct", "Premium", "Créatif"];
@@ -103,7 +326,11 @@ const SERVICES = ["Design", "Dev Web", "Rédaction", "SEO", "Marketing", "Consul
 export default function App() {
   const [step, setStep] = useState(0);
   const [done, setDone] = useState([]);
-  const [form, setForm] = useState({ service: [], projectDesc: "", budget: "", deadline: "", clientName: "", clientCompany: "", clientProblem: "", freelanceName: "", tone: "Professionnel", extras: "" });
+  const [form, setForm] = useState({
+    service: [], projectDesc: "", budget: "", deadline: "",
+    clientName: "", clientCompany: "", clientProblem: "",
+    freelanceName: "", tone: "Professionnel", extras: ""
+  });
   const [proposal, setProposal] = useState("");
   const [loading, setLoading] = useState(false);
   const [streaming, setStreaming] = useState(false);
@@ -114,17 +341,13 @@ export default function App() {
   const proposalRef = useRef("");
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
-
-  const toggleTag = (arr, key, val) => {
+  const toggleTag = (key, val) => {
     const cur = form[key];
     set(key, cur.includes(val) ? cur.filter(x => x !== val) : [...cur, val]);
   };
 
   const handleGenerate = () => {
-    if (proposalCount >= 1) {
-      setShowPricing(true);
-      return;
-    }
+    if (proposalCount >= 1) { setShowPricing(true); return; }
     setStep(3);
     generate();
   };
@@ -135,24 +358,20 @@ export default function App() {
     proposalRef.current = "";
 
     const prompt = `Tu es un expert en copywriting commercial pour freelances. 
-Génère une proposition commerciale percutante et professionnelle en français, avec ce format :
+Génère une proposition commerciale percutante et professionnelle en français :
 
 ---
 **PROPOSITION COMMERCIALE**
-
-**Objet :** [Titre accrocheur du projet]
-
+**Objet :** [Titre accrocheur]
 **À :** ${form.clientName || "Le client"} ${form.clientCompany ? `— ${form.clientCompany}` : ""}
 **De :** ${form.freelanceName || "Votre freelance"}
 **Date :** ${new Date().toLocaleDateString("fr-FR")}
-
 ---
-
 **VOTRE SITUATION**
-[Reformuler le problème du client avec empathie — 2-3 phrases]
+[Reformuler le problème avec empathie — 2-3 phrases]
 
 **MA SOLUTION**
-[Décrire l'approche et ce qui sera livré — 3-4 phrases, concret et rassurant]
+[Décrire l'approche — 3-4 phrases concrètes]
 
 **CE QUE VOUS OBTENEZ**
 • [Livrable 1]
@@ -168,24 +387,24 @@ Délai : ${form.deadline || "À définir ensemble"}
 [2-3 phrases qui inspirent confiance, ton ${form.tone.toLowerCase()}]
 
 **PROCHAINE ÉTAPE**
-[Appel à l'action clair et engageant]
+[Appel à l'action clair]
 
 ---
-
-Contexte :
-- Services : ${form.service.join(", ") || "Non précisé"}
-- Projet : ${form.projectDesc || "Non précisé"}
-- Problème client : ${form.clientProblem || "Non précisé"}
-- Infos complémentaires : ${form.extras || "Aucune"}
-- Ton souhaité : ${form.tone}
-
-Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
+Services : ${form.service.join(", ") || "Non précisé"}
+Projet : ${form.projectDesc}
+Problème client : ${form.clientProblem || "Non précisé"}
+Extras : ${form.extras || "Aucun"}
+Ton : ${form.tone}
+Maximum 400 mots.`;
 
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 1000, stream: true, messages: [{ role: "user", content: prompt }] }),
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514", max_tokens: 1000, stream: true,
+          messages: [{ role: "user", content: prompt }]
+        }),
       });
 
       setLoading(false);
@@ -213,17 +432,16 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
       setStreaming(false);
       setDone([0, 1, 2, 3]);
       setProposalCount(c => c + 1);
-    } catch (e) {
+    } catch {
       setLoading(false);
       setStreaming(false);
-      setProposal("❌ Erreur lors de la génération.");
+      setProposal("❌ Erreur lors de la génération. Réessaie.");
     }
   };
 
   const handlePayment = async () => {
     const price = selectedPlan === "starter" ? 1900 : 4900;
-    const label = selectedPlan === "starter" ? "ProposeAI Starter — 5 propositions/mois" : "ProposeAI Pro — Illimité";
-
+    const label = selectedPlan === "starter" ? "ProposeAI Starter" : "ProposeAI Pro";
     const stripe = window.Stripe(STRIPE_KEY);
     const { error } = await stripe.redirectToCheckout({
       lineItems: [{ price_data: { currency: "eur", product_data: { name: label }, unit_amount: price, recurring: { interval: "month" } }, quantity: 1 }],
@@ -249,17 +467,25 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
         <div className="panel-sub">Décris le projet pour lequel tu veux créer une proposition.</div>
         <div className="field">
           <label>Services proposés</label>
-          <div className="tag-row">{SERVICES.map(s => <span key={s} className={`tag ${form.service.includes(s) ? "selected" : ""}`} onClick={() => toggleTag(form.service, "service", s)}>{s}</span>)}</div>
+          <div className="tag-row">
+            {SERVICES.map(s => (
+              <span key={s} className={`tag ${form.service.includes(s) ? "selected" : ""}`}
+                onClick={() => toggleTag("service", s)}>{s}</span>
+            ))}
+          </div>
         </div>
         <div className="field">
           <label>Description du projet *</label>
-          <textarea placeholder="Ex: Refonte du site e-commerce, ajout d'un configurateur produit…" value={form.projectDesc} onChange={e => set("projectDesc", e.target.value)} />
+          <textarea placeholder="Ex: Refonte du site e-commerce, intégration Stripe…"
+            value={form.projectDesc} onChange={e => set("projectDesc", e.target.value)} />
         </div>
         <div className="row">
           <div className="field"><label>Budget client</label><input placeholder="Ex: 2 500 €" value={form.budget} onChange={e => set("budget", e.target.value)} /></div>
           <div className="field"><label>Délai</label><input placeholder="Ex: 3 semaines" value={form.deadline} onChange={e => set("deadline", e.target.value)} /></div>
         </div>
-        <div className="btn-row"><button className="btn btn-primary" onClick={() => setStep(1)}>Suivant →</button></div>
+        <div className="btn-row">
+          <button className="btn btn-primary" onClick={() => setStep(1)}>Suivant →</button>
+        </div>
       </>
     );
 
@@ -286,20 +512,27 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
       <>
         <div className="panel-title">Ton offre</div>
         <div className="panel-sub">
-          Personnalise le style.
+          Choisis le ton de ta proposition.
           {proposalCount === 0 && <span className="free-badge">1 essai gratuit</span>}
-          {proposalCount >= 1 && <span style={{color:"var(--accent)", fontSize:"0.72rem", marginLeft:8}}>→ Abonnement requis</span>}
+          {proposalCount >= 1 && <span style={{color:"var(--accent)", fontSize:"0.75rem", marginLeft:8, fontWeight:600}}>Abonnement requis</span>}
         </div>
         <div className="field"><label>Ton prénom / nom</label><input placeholder="Alex Martin" value={form.freelanceName} onChange={e => set("freelanceName", e.target.value)} /></div>
         <div className="field">
           <label>Ton de la proposition</label>
-          <div className="tag-row">{TONES.map(t => <span key={t} className={`tag ${form.tone === t ? "selected" : ""}`} onClick={() => set("tone", t)}>{t}</span>)}</div>
+          <div className="tag-row">
+            {TONES.map(t => (
+              <span key={t} className={`tag ${form.tone === t ? "selected" : ""}`} onClick={() => set("tone", t)}>{t}</span>
+            ))}
+          </div>
         </div>
-        <div className="field"><label>Arguments complémentaires (optionnel)</label><textarea placeholder="Ex: 5 ans d'expérience, garantie satisfaction…" value={form.extras} onChange={e => set("extras", e.target.value)} /></div>
+        <div className="field">
+          <label>Arguments complémentaires (optionnel)</label>
+          <textarea placeholder="Ex: 5 ans d'expérience, garantie satisfaction…" value={form.extras} onChange={e => set("extras", e.target.value)} />
+        </div>
         <div className="btn-row">
           <button className="btn btn-ghost" onClick={() => setStep(1)}>← Retour</button>
           <button className="btn btn-primary" disabled={!canGenerate || loading} onClick={handleGenerate}>
-            {proposalCount >= 1 ? "🔒 S'abonner pour générer" : "✦ Générer gratuitement"}
+            {proposalCount >= 1 ? "🔒 S'abonner" : "✦ Générer gratuitement"}
           </button>
         </div>
       </>
@@ -308,16 +541,23 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
     if (step === 3) return (
       <>
         <div className="panel-title">Résultat</div>
-        <div className="panel-sub">Ta proposition est visible à droite.</div>
-        <div style={{ background: "rgba(200,240,96,0.06)", border: "1px solid rgba(200,240,96,0.2)", borderRadius: 12, padding: "16px 20px", marginBottom: 20 }}>
-          <div style={{ fontSize: "0.7rem", color: "var(--accent)", letterSpacing: "0.08em", marginBottom: 6 }}>✦ PROCHAINES ÉTAPES</div>
-          <div style={{ fontSize: "0.78rem", lineHeight: 1.7, color: "var(--text)", opacity: 0.85 }}>
-            1. Copie la proposition avec le bouton ci-dessous<br />
+        <div className="panel-sub">Ta proposition est prête.</div>
+        <div className="success-box">
+          <div className="success-box-label">✦ PROCHAINES ÉTAPES</div>
+          <div className="success-box-text">
+            1. Copie la proposition ci-dessous<br />
             2. Colle-la dans Gmail / Notion / Word<br />
             3. Envoie avec confiance 🚀
           </div>
         </div>
-        <div className="btn-row">
+        {proposal && (
+          <div style={{background:"var(--surface)", border:"1.5px solid var(--border)", borderRadius:10, padding:18, marginBottom:16, fontSize:"0.82rem", lineHeight:1.75, whiteSpace:"pre-wrap", maxHeight:320, overflowY:"auto"}}>
+            {proposal}
+          </div>
+        )}
+        {loading && <div className="loading-wrap" style={{height:120}}><div className="spinner"/><div className="loading-text">Rédaction en cours…</div></div>}
+        {proposal && <button className="copy-btn" onClick={copy}>{copied ? "✓ Copié !" : "📋 Copier la proposition"}</button>}
+        <div className="btn-row" style={{marginTop:16}}>
           <button className="btn btn-ghost" onClick={() => { setStep(0); setProposal(""); setDone([]); }}>↺ Nouvelle</button>
           <button className="btn btn-primary" onClick={() => setShowPricing(true)}>⚡ S'abonner</button>
         </div>
@@ -333,8 +573,8 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
       {showPricing && (
         <div className="pricing-overlay">
           <div className="pricing-box">
-            <div className="pricing-title">Passez à la vitesse supérieure ✦</div>
-            <div className="pricing-sub">Générez autant de propositions que vous voulez. Chaque proposition gagnée vaut 10x l'abonnement.</div>
+            <div className="pricing-title">Passez au niveau supérieur</div>
+            <div className="pricing-sub">Propositions illimitées. Chaque client gagné vaut 10x l'abonnement.</div>
             <div className="plans">
               <div className={`plan ${selectedPlan === "starter" ? "selected" : ""}`} onClick={() => setSelectedPlan("starter")}>
                 <div className="plan-name">Starter</div>
@@ -358,10 +598,10 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
 
       <div className="app">
         <header className="header">
-          <div className="logo"><span className="logo-dot" />ProposeAI</div>
-          <div style={{display:"flex", gap:12, alignItems:"center"}}>
-            <span className="badge">Beta · IA Powered</span>
-            <button className="btn btn-primary" style={{padding:"8px 16px", fontSize:"0.72rem"}} onClick={() => setShowPricing(true)}>S'abonner</button>
+          <div className="logo"><span className="logo-dot"/>ProposeAI</div>
+          <div className="header-right">
+            <span className="badge">Beta · IA</span>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowPricing(true)}>S'abonner</button>
           </div>
         </header>
 
@@ -379,7 +619,7 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
           <div className="preview-panel">
             <div className="preview-label">Aperçu proposition</div>
             <div className="proposal-card">
-              {loading && <div className="loading-wrap"><div className="spinner" /><div className="loading-text">Rédaction en cours…</div></div>}
+              {loading && <div className="loading-wrap"><div className="spinner"/><div className="loading-text">Rédaction en cours…</div></div>}
               {!loading && !proposal && <div className="empty-state"><div className="empty-icon">✦</div><p>Ta proposition apparaîtra ici une fois générée.</p></div>}
               {!loading && proposal && (
                 <>
@@ -397,8 +637,9 @@ Sois percutant, humain, et évite le jargon corporate. Maximum 400 mots.`;
             {proposal && !loading && <button className="copy-btn" onClick={copy}>{copied ? "✓ Copié !" : "Copier la proposition"}</button>}
           </div>
         </div>
+
         <div className="footer-note">
-          <span>ProposeAI · Généré avec Claude AI</span>
+          <span>ProposeAI · Propulsé par Claude AI</span>
           <span>Gagne 2h par proposition ✦</span>
         </div>
       </div>
