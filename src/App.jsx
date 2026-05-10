@@ -439,33 +439,11 @@ Maximum 400 mots.`;
     }
   };
 
-  const handlePayment = async () => {
-    const priceId = selectedPlan === "starter"
-      ? "price_1TVIrgQqfXKCwkrJpYNKBDaa"
-      : "price_1TVIrQQqfXKCwkrJRujtcyMR";
-    
-    // Load Stripe dynamically
-    const loadStripe = () => new Promise((resolve) => {
-      if (window.Stripe) { resolve(window.Stripe); return; }
-      const script = document.createElement("script");
-      script.src = "https://js.stripe.com/v3/";
-      script.onload = () => resolve(window.Stripe);
-      document.head.appendChild(script);
-    });
-
-    try {
-      const StripeConstructor = await loadStripe();
-      const stripe = StripeConstructor(STRIPE_KEY);
-      const { error } = await stripe.redirectToCheckout({
-        lineItems: [{ price: priceId, quantity: 1 }],
-        mode: "subscription",
-        successUrl: window.location.origin + "?success=1",
-        cancelUrl: window.location.origin,
-      });
-      if (error) alert(error.message);
-    } catch (e) {
-      alert("Erreur de paiement. Réessaie.");
-    }
+  const handlePayment = () => {
+    const url = selectedPlan === "starter"
+      ? "https://buy.stripe.com/4gMeVfgvKget9ew0KffnO01"
+      : "https://buy.stripe.com/28E3cx0wM1jz76odx1fnO00";
+    window.open(url, "_blank");
   };
 
   const copy = () => {
